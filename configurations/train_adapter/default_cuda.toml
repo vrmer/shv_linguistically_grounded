@@ -1,0 +1,35 @@
+title = "Default task adapter config"
+
+device = "cuda"
+seed = 42
+preserve_dir = "assets/dataset"
+model_name = "roberta-base"
+metric_name = "accuracy"
+
+wandb.project = "probe_adapter"
+wandb.log_model = "checkpoint"
+
+test_run.size = 0
+
+[preprocess]
+input_dir = "assets/blimp"
+test_split = 0.1
+shuffle = true
+
+[peft]
+r = 16
+lora_alpha = 16
+lora_dropout = 0.1
+bias = "all"  # or "lora_only" or "none"
+
+[training]
+output_dir = "outputs/adapter"
+eval_strategy = "steps"
+eval_steps = 500
+logging_steps = 5
+report_to = "wandb"
+per_device_train_batch_size = 32
+per_device_eval_batch_size = 32
+learning_rate = 5e-5
+
+
