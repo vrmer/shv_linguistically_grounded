@@ -56,9 +56,9 @@ except FileNotFoundError:
     warnings.warn("Preserve dir is not provided, the dataset won't be preserved.")
 
 if config["preprocess"]["shuffle"] is True:
-    filename = "dataset_shuffled.pickle"
+    filename = f"{model_name}_dataset_shuffled.pickle"
 else:
-    filename = "dataset_not_shuffled.pickle"
+    filename = f"{model_name}_dataset_not_shuffled.pickle"
 
 if not os.path.exists(os.path.join(preserve_dir, filename)):
     dataset = preprocess_whole_dataset(

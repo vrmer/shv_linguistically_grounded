@@ -1,5 +1,6 @@
 import os
 import glob
+import torch
 import datasets
 import pandas as pd
 import numpy.random as npr
@@ -132,5 +133,6 @@ def preprocess_whole_dataset(input_dir: str,
     if tokenize is True:
         map_tokenize = partial(do_tokenize, tokenizer=tokenizer)
         overall_dataset = overall_dataset.map(map_tokenize, batched=True)
+        overall_dataset.set_format("torch")
 
     return overall_dataset
