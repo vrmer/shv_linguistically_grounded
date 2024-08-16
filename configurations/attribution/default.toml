@@ -1,0 +1,19 @@
+title = "Default configuration for deriving attributions"
+
+input_dir = "dataset"
+output_dir = "attributions/tracker"
+target_uid = "determiner_noun_agreement_1"
+device = "mps:0"
+inference_type = "shapley"
+finetuned_model = "outputs/adapter"
+head_mask = "masks"
+mask_id = ""
+attribution_path = "attributions/marginal_contributions"
+
+n_samples = 300
+
+[model]
+name = "roberta-base"
+layer_count = 12
+attention_heads = 12
+
