@@ -26,7 +26,8 @@ seed = config["seed"]
 dataset_dir = os.path.join(
     config["dataset_dir"], model_name)
 metric_name = config["metric_name"]
-output_dir = config["training"]["output_dir"]
+output_dir = os.path.join(
+    config["training"]["output_dir"], model_name)
 
 # load device
 device = config["device"]
