@@ -1,6 +1,6 @@
 title = "Default configuration for deriving attributions"
 
-input_dir = "dataset"
+input_dir = "assets/dataset"
 output_dir = "attributions/tracker"
 target_uid = "determiner_noun_agreement_1"
 device = "mps:0"
@@ -9,11 +9,13 @@ finetuned_model = "outputs/adapter"
 head_mask = "masks"
 mask_id = ""
 attribution_path = "attributions/marginal_contributions"
+dataset_name = "bert-base-cased_dataset_shuffled.pickle"
 
 n_samples = 300
 
 [model]
-name = "roberta-base"
+#name = "roberta-base"
+name = "bert-base-cased"
 layer_count = 12
 attention_heads = 12
 
