@@ -68,13 +68,20 @@ attention_heads = config["model"]["attention_heads"]
 
 # paths
 input_dir = os.path.join(
-    config["paths"]["input_dir"], model_name)
+    config["paths"]["input_dir"], model_name
+)
 tracker_dir = os.path.join(
-    config["paths"]["tracker_dir"], model_name)
+    config["paths"]["tracker_dir"], model_name
+)
 attribution_path = os.path.join(
-    config["paths"]["attribution_path"], model_name)
-finetuned_model = config["paths"]["finetuned_model"]
-head_mask = config["paths"]["head_mask"]
+    config["paths"]["attribution_path"], model_name
+)
+finetuned_model = os.path.join(
+    config["paths"]["finetuned_model"], model_name
+)
+head_mask = os.path.join(
+    config["paths"]["head_mask"], model_name
+)
 
 # attribution opts
 if len(sys.argv) > 2:
