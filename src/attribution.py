@@ -59,26 +59,35 @@ config_path = sys.argv[1]
 with open(config_path, "rb") as infile:
     config = tomli.load(infile)
 
-input_dir = config["input_dir"]
-output_dir = config["output_dir"]
-target_uid = config["target_uid"]
 device = config["device"]
-inference_type = config["inference_type"]
-finetuned_model = config["finetuned_model"]
-head_mask = config["head_mask"]
-mask_id = config["mask_id"]
-attribution_path = config["attribution_path"]
 
-n_samples = config["n_samples"]
-
+# model opts
 model_name = config["model"]["name"]
 layer_count = config["model"]["layer_count"]
 attention_heads = config["model"]["attention_heads"]
 
+# paths
+input_dir = os.path.join(
+    config["paths"]["input_dir"], model_name)
+tracker_dir = os.path.join(
+    config["paths"]["tracker_dir"], model_name)
+attribution_path = os.path.join(
+    config["paths"]["attribution_path"], model_name)
+finetuned_model = config["paths"]["finetuned_model"]
+head_mask = config["paths"]["head_mask"]
+
+# attribution opts
+if len(sys.argv) > 2:
+    target_uid = sys.argv[2]
+else:
+    target_uid = config["attribution"]["target_uid"]
+inference_type = config["attribution"]["inference_type"]
+mask_id = config["attribution"]["mask_id"]
+n_samples = config["attribution"]["n_samples"]
 
 n_full_mask = layer_count * attention_heads
 logging.set_verbosity_error()
-os.makedirs(output_dir, exist_ok=True)
+os.makedirs(tracker_dir, exist_ok=True)
 
 try:
     head_mask = int(head_mask)
@@ -106,19 +115,19 @@ model = PeftModelForSequenceClassification.from_pretrained(
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 
-metric = evaluate.load("accuracy")
-
-compute_metrics = partial(compute_metrics, metric=metric, output_dir=None)
-
-
 train_args = TrainingArguments(
-        "/tmp/", per_device_eval_batch_size=100
+        "/tmp/", per_device_eval_batch_size=100,
+        report_to="none"
         )
 
 if inference_type == "shapley":
     mask = torch.ones((1, n_full_mask)).to(device)
-    fake_model = MaskModel(model, mask, target_uid, output_dir, layer_count, attention_heads)
+    fake_model = MaskModel(model, mask, target_uid, tracker_dir, layer_count, attention_heads)
+    # Assign Handler Function
+    signal.signal(signal.SIGINT, partial(signal_handler, fake_model=fake_model))
+    target_model = fake_model
 else:
+    target_model = model
     if mask_id:
         if isinstance(head_mask, str):
             masks = np.load(head_mask, allow_pickle=True)
@@ -130,15 +139,7 @@ else:
         mask = mask.reshape(layer_count, attention_heads)
         mask = mask.int()
 
-# Assign Handler Function
-signal.signal(signal.SIGINT, partial(signal_handler, fake_model=fake_model))
-
-if inference_type == "shapley":
-    target_model = fake_model
-else:
-    target_model = model
-
-with open(os.path.join(input_dir, config["dataset_name"]), "rb") as infile:
+with open(os.path.join(input_dir, "dataset_shuffled.pickle"), "rb") as infile:
     eval_dataset = pickle.load(infile)["test"]
 
 # select target uid
@@ -147,6 +148,10 @@ label_list = eval_dataset["label"]
 
 with torch.no_grad():
 
+    metric = evaluate.load("accuracy")
+
+    compute_metrics = partial(compute_metrics, metric=metric, output_dir=None)
+
     model.eval()
 
     trainer = Trainer(
@@ -154,7 +159,7 @@ with torch.no_grad():
             args=train_args,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics,
-            tokenizer=tokenizer
+            tokenizer=tokenizer,
             )
 
     attribute_factory = partial(attribute_factory, n_full_mask=n_full_mask, trainer=trainer)
@@ -190,5 +195,5 @@ with torch.no_grad():
             exp_file = f"{mask_id}-{target_uid}.txt"
         else:
             exp_file = f"{mask_id}.txt"
-        with open(os.path.join(output_dir, exp_file), "w") as outfile:
+        with open(os.path.join(tracker_dir, exp_file), "w") as outfile:
             outfile.write(str(acc))

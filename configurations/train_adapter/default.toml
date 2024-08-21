@@ -2,8 +2,8 @@ title = "Default task adapter config"
 
 device = "mps"
 seed = 42
-preserve_dir = "assets/dataset"
-model_name = "roberta-base"
+dataset_dir = "assets/dataset"
+model_name = "bert-base-cased"
 metric_name = "accuracy"
 
 wandb.project = "training"

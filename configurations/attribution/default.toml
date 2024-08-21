@@ -1,21 +1,23 @@
 title = "Default configuration for deriving attributions"
 
-input_dir = "assets/dataset"
-output_dir = "attributions/tracker"
-target_uid = "determiner_noun_agreement_1"
 device = "mps:0"
-inference_type = "shapley"
-finetuned_model = "outputs/adapter"
-head_mask = "masks"
-mask_id = ""
-attribution_path = "attributions/marginal_contributions"
-dataset_name = "bert-base-cased_dataset_shuffled.pickle"
 
+[attribution]
+target_uid = "determiner_noun_agreement_1"
+inference_type = "shapley"
+mask_id = ""
 n_samples = 300
 
+
 [model]
-#name = "roberta-base"
 name = "bert-base-cased"
 layer_count = 12
 attention_heads = 12
+
+[paths]
+input_dir = "assets/dataset"
+tracker_dir = "attributions/trackers"
+attribution_path = "attributions/marginal_contributions"
+head_mask = "masks"
+finetuned_model = "outputs/adapter"
 

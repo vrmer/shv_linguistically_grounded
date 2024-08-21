@@ -23,7 +23,8 @@ with open(config_path, "rb") as infile:
 
 model_name = config["model_name"]
 seed = config["seed"]
-preserve_dir = config["preserve_dir"]
+dataset_dir = os.path.join(
+    config["dataset_dir"], model_name)
 metric_name = config["metric_name"]
 output_dir = config["training"]["output_dir"]
 
@@ -51,24 +52,24 @@ model = AutoModelForSequenceClassification.from_pretrained(model_name, num_label
 
 # process and save dataset
 try:
-    os.makedirs(preserve_dir, exist_ok=True)
+    os.makedirs(dataset_dir, exist_ok=True)
 except FileNotFoundError:
     warnings.warn("Preserve dir is not provided, the dataset won't be preserved.")
 
 if config["preprocess"]["shuffle"] is True:
-    filename = f"{model_name}_dataset_shuffled.pickle"
+    filename = "dataset_shuffled.pickle"
 else:
-    filename = f"{model_name}_dataset_not_shuffled.pickle"
+    filename = "dataset_not_shuffled.pickle"
 
-if not os.path.exists(os.path.join(preserve_dir, filename)):
+if not os.path.exists(os.path.join(dataset_dir, filename)):
     dataset = preprocess_whole_dataset(
         **config["preprocess"], tokenizer=tokenizer,
         random_generator=random_generator,
     )
-    with open(os.path.join(preserve_dir, filename), "wb") as outfile:
+    with open(os.path.join(dataset_dir, filename), "wb") as outfile:
         pickle.dump(dataset, outfile)
 else:
-    with open(os.path.join(preserve_dir, filename), "rb") as infile:
+    with open(os.path.join(dataset_dir, filename), "rb") as infile:
         dataset = pickle.load(infile)
 
 # initialise PEFT
