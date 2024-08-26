@@ -42,10 +42,10 @@ all_means = get_all_means(
 # generate masks
 if filter_type.startswith("r"):
     for i in range(random_mask_count):
-        mask_output_path = os.path.join(output_dir, "random", f"{filter_type}{i}.npz")
+        mask_output_path = os.path.join(output_dir, model_name, "random", f"{filter_type}{i}.npz")
         mask = {k: generate_mask(v, seed=i) for k, v in all_means.items()}
         np.savez(mask_output_path, mask)
 else:
-    mask_output_path = os.path.join(output_dir, f"{filter_type}.npz")
+    mask_output_path = os.path.join(output_dir, model_name, f"{filter_type}.npz")
     mask = {k: generate_mask(v) for k, v in all_means.items()}
     np.savez(mask_output_path, mask)
