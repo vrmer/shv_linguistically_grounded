@@ -1,8 +1,0 @@
-title = "Default options for generating prune masks"
-
-input_dir = "attributions"
-output_dir = "masks"
-filter_type = "+"
-random_mask_count = 10
-
-# TODO: maybe needed to add other parameters

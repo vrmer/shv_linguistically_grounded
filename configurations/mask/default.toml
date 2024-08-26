@@ -1,0 +1,12 @@
+title = "Default options for generating prune masks"
+
+[paths]
+input_dir = "attributions/trackers"
+output_dir = "masks"
+model_name = "bert-base-cased"
+
+[mask]
+threshold = 0
+formatting = "pt"
+filter_type = "r+"
+random_mask_count = 15

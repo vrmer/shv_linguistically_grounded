@@ -71,7 +71,7 @@ def match_paradigm_category(input_dir: str, column_name: str = "linguistics_term
         paradigm = os.path.basename(path)
         paradigm = re.sub(".jsonl", "", paradigm)
         df = pd.read_json(path, lines=True)
-        category = df["linguistics_term"][0]
+        category = df[column_name][0]
 
         paradigm_dict[paradigm] = category
 
