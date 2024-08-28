@@ -1,0 +1,23 @@
+title = "Default configuration for pruning experiments"
+
+device = "mps:0"
+seed = 42
+model_name = "bert-base-cased"
+
+[attribution]
+target_uid = "determiner_noun_agreement_1"
+inference_type = "accuracy"
+n_samples = 300
+
+[pruning]
+n_heads = 0  # 0 for targetted pruning
+mask_id = ""
+head_mask = "masks"
+filter_type = "-"  # only used when n_heads is 0
+
+[paths]
+dataset_dir = "assets/dataset"
+tracker_dir = "attributions/trackers"
+prune_path = "attributions/pruning"
+finetuned_model = "outputs/adapter"
+

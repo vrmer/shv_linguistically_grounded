@@ -3,7 +3,7 @@ import sys
 import tomli
 import numpy as np
 from functools import partial
-from .utils import generate_mask, get_all_means
+from .utils import generate_generic_mask, get_all_means
 
 
 # load parameters
@@ -26,7 +26,7 @@ random_mask_count = mask_configs["random_mask_count"]
 
 
 generate_mask = partial(
-    generate_mask, threshold=threshold,
+    generate_generic_mask, threshold=threshold,
     formatting=formatting, filter_type=filter_type)
 
 os.makedirs(output_dir, exist_ok=True)

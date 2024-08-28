@@ -1,6 +1,7 @@
 title = "Default configuration for deriving attributions"
 
 device = "mps:0"
+seed = 42
 
 [attribution]
 target_uid = "determiner_noun_agreement_1"
