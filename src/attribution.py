@@ -96,12 +96,10 @@ if __name__ == "__main__":
         if n_heads > 0:
             raise ValueError("If head mask is not 0, mask id cannot be None")
 
-
     if device == "cuda:0":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
         reserve = torch.tensor(1)
         reserve.to(device)
-
 
     # Load model and config
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
