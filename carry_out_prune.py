@@ -4,8 +4,10 @@ import csv
 import tomli
 import argparse
 import subprocess
-from queue import Queue
-from threading import Thread
+from tqdm import tqdm
+import concurrent.futures
+from threading import Lock
+from itertools import product
 
 
 if __name__ == "__main__":
@@ -16,57 +18,72 @@ if __name__ == "__main__":
                         type=str, required=True,
                         help="Path to config file (for prune)")
 
-    parser.add_argument("-u", "--target_uid",
-                        type=str, required=True, default=None,
-                        help="Target uid")
-
-    parser.add_argument("-m", "--mask_id",
-                        type=str, required=True, default=None,
-                        help="Mask id")
-
     parser.add_argument("-n", "--n_heads",
                         type=int, required=False, default=0,
                         help="Number of heads to mask, if not provided, it is taken from the config file")
 
-    parser.add_argument("--minimum_n_heads",
+    parser.add_argument("-m", "--minimum_n_heads",
                         type=int, default=0, required=False,
                         help="Minimum number of heads to prune for parallelisation, it is 0 by default")
 
-    parser.add_argument("-o", "--output",
+    parser.add_argument("-o", "--output_name",
                         type=str, required=False, default="results.csv",
                         help="Path to output file, appended to the config output by default")
+
+    parser.add_argument("-s", "--segment",
+                        type=int, default=1, required=True,
+                        help="First, second, third, or fourth segment of experiments")
+
+    parser.add_argument("-w", "--n_workers",
+                        type=int, default=10, required=False,
+                        help="Number of parallel workers")
 
     args = parser.parse_args()
 
 
-    def writer():
-        with open("results.csv", mode="a", newline="") as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=[
-                "target_uid", "mask_id", "n_heads", "accuracy"])
-            writer.writeheader()
-            while True:
-                result = result_queue.get()
-                if result is None:
-                    break
-                writer.writerow(result)
-                result_queue.task_done()
-
-
-    def run_attribution(target_uid, mask_id, n_heads):
+    def run_attribution_combination(target_uid, mask_id, n_heads, config_path):
         pattern = r"\d+\.?\d*"  # regex for capturing numbers
         command = [
             "python", "-m", "src.attribution", "-c",
-            args.config, "-u", target_uid,
-            "-m", mask_id, "-n", n_heads
+            config_path, "-u", target_uid,
+            "-m", mask_id, "-n", str(n_heads)
         ]
         result = subprocess.run(
             command, capture_output=True, text=True).stdout.strip()
         score = float(re.findall(pattern, result)[0])
-        result_dict = {
+        return {
             "target_uid": target_uid, "mask_id": mask_id,
             "n_heads": n_heads, "accuracy": score
         }
-        return result_dict
+
+
+    def process_combinations(combinations, output_path, config_path, n_workers):
+        lock = Lock()
+
+        def safe_write(result):
+            with lock:
+                with open(output_path, "a") as outfile:
+                    writer = csv.DictWriter(outfile, fieldnames=[
+                        "target_uid", "mask_id", "n_heads", "accuracy"])
+                    writer.writerow(result)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+
+            futures = [
+                executor.submit(run_attribution_combination, target_uid, mask_id, n_heads, config_path)
+                for target_uid, mask_id, n_heads in combinations]
+
+            with open(output_path, mode="w") as outfile:
+                writer = csv.DictWriter(outfile, fieldnames=[
+                    "target_uid", "mask_id", "n_heads", "accuracy"])
+                writer.writeheader()
+
+            # for future in concurrent.futures.as_completed(futures):
+            #     result = future.result()
+            #     safe_write(result)
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing"):
+                result = future.result()
+                safe_write(result)
 
 
     # define parameters
@@ -76,28 +93,33 @@ if __name__ == "__main__":
     device = config["device"]
     seed = config["seed"]
 
-    target_uid = args.target_uid
-    mask_id = args.mask_id
-
     model_name = config["model_name"]
+
+    n_workers = args.n_workers
 
     n_heads = config["n_heads"] if args.n_heads == 0 else args.n_heads
     minimum_n_heads = args.minimum_n_heads
 
-    prune_path = os.path.join(config["paths"]["prune_path"], model_name, args.output)
+    output_path = os.path.join(config["paths"]["prune_path"], model_name, args.output_name)
 
-    # queue to collect output
-    result_queue = Queue()
+    with open("paradigms.txt", "r") as infile:
+        paradigms = [paradigm.strip() for paradigm in infile.readlines()]
 
-    writer_thread = Thread(target=writer)
-    writer_thread.start()
+    if args.segment == 1:
+        paradigms = paradigms[:17]
+    elif args.segment == 2:
+        paradigms = paradigms[17:34]
+    elif args.segment == 3:
+        paradigms = paradigms[34:51]
+    elif args.segment == 4:
+        paradigms = paradigms[51:]
+    else:
+        raise ValueError("Segment must be 1, 2, 3, or 4")
 
-    for i in range(minimum_n_heads, n_heads+1):
+    n_heads_range = range(minimum_n_heads, n_heads + 1)
 
-        result_dict = run_attribution(
-            target_uid=target_uid, mask_id=mask_id, n_heads=str(i))
+    combinations = list(
+        product(paradigms, paradigms, n_heads_range)
+    )
 
-        result_queue.put(result_dict)
-
-    result_queue.put(None)
-    writer_thread.join()
+    process_combinations(combinations, output_path, args.config, n_workers)
