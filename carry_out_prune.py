@@ -1,5 +1,4 @@
 import os
-import re
 import csv
 import tomli
 import argparse
@@ -23,7 +22,7 @@ if __name__ == "__main__":
                         help="Number of heads to mask, if not provided, it is taken from the config file")
 
     parser.add_argument("-m", "--minimum_n_heads",
-                        type=int, default=0, required=False,
+                        type=int, default=1, required=False,
                         help="Minimum number of heads to prune for parallelisation, it is 0 by default")
 
     parser.add_argument("-o", "--output_name",
@@ -42,7 +41,6 @@ if __name__ == "__main__":
 
 
     def run_attribution_combination(target_uid, mask_id, n_heads, config_path):
-        pattern = r"\d+\.?\d*"  # regex for capturing numbers
         command = [
             "python", "-m", "src.attribution", "-c",
             config_path, "-u", target_uid,
@@ -50,10 +48,9 @@ if __name__ == "__main__":
         ]
         result = subprocess.run(
             command, capture_output=True, text=True).stdout.strip()
-        score = float(re.findall(pattern, result)[0])
         return {
             "target_uid": target_uid, "mask_id": mask_id,
-            "n_heads": n_heads, "accuracy": score
+            "n_heads": n_heads, "accuracy": float(result)
         }
 
 

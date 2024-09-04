@@ -190,29 +190,28 @@ if __name__ == "__main__":
                                    padding=True, return_tensors="pt").to(device)
                 output = model(**tokens, head_mask=mask.to(device))
                 preds = torch.nn.functional.softmax(output.logits, dim=1).argmax(-1)
-                acc = metric.compute(predictions=preds, references=eval_dataset["label"])
+                acc = metric.compute(predictions=preds, references=eval_dataset["label"]).get("accuracy")
 
             else:
                 acc = trainer.evaluate()["eval_accuracy"]
 
-            print(f"Eval accuracy: {acc}")
-            print()
+            print(acc)
 
-            if not mask_id:
-                exp_file = f"{target_uid}.txt"
-                output_dir = os.path.join(prune_path, "baseline")
-            else:
-                if mask_id != target_uid:
-                    exp_file = f"{mask_id}-on-{target_uid}.txt"
-                else:
-                    exp_file = f"{mask_id}.txt"
-
-                if n_heads > 0:
-                    output_dir = os.path.join(prune_path, f"{n_heads}_heads")
-                else:
-                    output_dir = os.path.join(prune_path, f"{filter_type}_filter")
-
-            os.makedirs(output_dir, exist_ok=True)
-
-            with open(os.path.join(output_dir, exp_file), "w") as outfile:
-                outfile.write(str(acc))
+            # if not mask_id:
+            #     exp_file = f"{target_uid}.txt"
+            #     output_dir = os.path.join(prune_path, "baseline")
+            # else:
+            #     if mask_id != target_uid:
+            #         exp_file = f"{mask_id}-on-{target_uid}.txt"
+            #     else:
+            #         exp_file = f"{mask_id}.txt"
+            #
+            #     if n_heads > 0:
+            #         output_dir = os.path.join(prune_path, f"{n_heads}_heads")
+            #     else:
+            #         output_dir = os.path.join(prune_path, f"{filter_type}_filter")
+            #
+            # os.makedirs(output_dir, exist_ok=True)
+            #
+            # with open(os.path.join(output_dir, exp_file), "w") as outfile:
+            #     outfile.write(str(acc))
