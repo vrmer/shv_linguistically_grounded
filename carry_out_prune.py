@@ -23,15 +23,11 @@ if __name__ == "__main__":
 
     parser.add_argument("-m", "--minimum_n_heads",
                         type=int, default=1, required=False,
-                        help="Minimum number of heads to prune for parallelisation, it is 0 by default")
+                        help="Minimum number of heads to prune for parallelisation, it is 1 by default")
 
     parser.add_argument("-o", "--output_name",
                         type=str, required=False, default="results.csv",
                         help="Path to output file, appended to the config output by default")
-
-    parser.add_argument("-s", "--segment",
-                        type=int, default=1, required=True,
-                        help="First, second, third, or fourth segment of experiments")
 
     parser.add_argument("-w", "--n_workers",
                         type=int, default=10, required=False,
@@ -75,9 +71,6 @@ if __name__ == "__main__":
                     "target_uid", "mask_id", "n_heads", "accuracy"])
                 writer.writeheader()
 
-            # for future in concurrent.futures.as_completed(futures):
-            #     result = future.result()
-            #     safe_write(result)
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing"):
                 result = future.result()
                 safe_write(result)
@@ -101,17 +94,6 @@ if __name__ == "__main__":
 
     with open("paradigms.txt", "r") as infile:
         paradigms = [paradigm.strip() for paradigm in infile.readlines()]
-
-    if args.segment == 1:
-        paradigms = paradigms[:17]
-    elif args.segment == 2:
-        paradigms = paradigms[17:34]
-    elif args.segment == 3:
-        paradigms = paradigms[34:51]
-    elif args.segment == 4:
-        paradigms = paradigms[51:]
-    else:
-        raise ValueError("Segment must be 1, 2, 3, or 4")
 
     n_heads_range = range(minimum_n_heads, n_heads + 1)
 
